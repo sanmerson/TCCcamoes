@@ -1,94 +1,147 @@
 package clientesnmp;
 
-
 import org.snmp4j.CommunityTarget;
 import org.snmp4j.PDU;
 import org.snmp4j.Snmp;
 import org.snmp4j.TransportMapping;
 import org.snmp4j.event.ResponseEvent;
+import org.snmp4j.event.ResponseListener;
 import org.snmp4j.mp.SnmpConstants;
-import org.snmp4j.smi.Integer32;
-import org.snmp4j.smi.OID;
-import org.snmp4j.smi.OctetString;
-import org.snmp4j.smi.UdpAddress;
-import org.snmp4j.smi.VariableBinding;
+import org.snmp4j.smi.*;
 import org.snmp4j.transport.DefaultUdpTransportMapping;
 
 public class ClienteSNMP {
-	 private static String  ipAddress  = "ADRESS";
+	 public static final String READ_COMMUNITY = "public";
 
-	  private static String  port    = "PORT";
+     public static final String WRITE_COMMUNITY= "private";
 
-	  // OID of MIB RFC 1213; Scalar Object = .iso.org.dod.internet.mgmt.mib-2.system.sysDescr.0
-	  private static String  oidValue  = ".1.3.6.1.2.1.1.1.0";  // ends with 0 for scalar object
+     public static final int mSNMPVersion =0; // 0 represents SNMP version=1
 
-	  private static int    snmpVersion  = SnmpConstants.version1;
+     public static final String OID_UPS_OUTLET_GROUP1 =
 
-	  private static String  community  = "public";
+     "1.3.6.1.4.1.318.1.1.1.12.3.2.1.3.1";
 
-	  public static void main(String[] args) throws Exception
-	  {
-	    System.out.println("SNMP GET Demo");
+     public static final String OID_SYS_DESCR="1.3.6.1.2.1.1.1.0";
 
-	    // Cria TransportMapping e o Listen
-	    TransportMapping<?> transport = new DefaultUdpTransportMapping();
-	    transport.listen();
+     public static void main(String[] args)
 
-	    // Cria o objeto do enderesso ip alvo
-	    CommunityTarget<UdpAddress> comtarget = new CommunityTarget<UdpAddress>();
-	    comtarget.setCommunity(new OctetString(community));
-	    comtarget.setVersion(snmpVersion);
-	    comtarget.setAddress(new UdpAddress(ipAddress + "/" + port));
-	    comtarget.setRetries(2);
-	    comtarget.setTimeout(1000);
+     {
 
-	    // Cria o objeto da PDU
-	    PDU pdu = new PDU();
-	    pdu.add(new VariableBinding(new OID(oidValue)));
-	    pdu.setType(PDU.GET);
-	    pdu.setRequestID(new Integer32(1));
+     try
 
-	    // Cria objeto Snmp para enviar dados ao agente
-	    Snmp snmp = new Snmp(transport);
+     {
 
-	    System.out.println("Sending Request to Agent...");
-	    ResponseEvent<UdpAddress> response = snmp.get(pdu, comtarget);
+     String strIPAddress = "127.0.0.1";
 
-	    // Verifica a resposta do agent
-	    if (response != null)
-	    {
-	      System.out.println("Got Response from Agent");
-	      PDU responsePDU = response.getResponse();
+     ClienteSNMP objSNMP = new ClienteSNMP();
 
-	      if (responsePDU != null)
-	      {
-	        int errorStatus = responsePDU.getErrorStatus();
-	        int errorIndex = responsePDU.getErrorIndex();
-	        String errorStatusText = responsePDU.getErrorStatusText();
+     String teste =objSNMP.snmpGet(strIPAddress,READ_COMMUNITY,OID_SYS_DESCR);
+     
+     System.out.print(teste);
+     }
+    
+     catch (Exception e)
+     
+     {
 
-	        if (errorStatus == PDU.noError)
-	        {
-	          System.out.println("Snmp Get Response = " + responsePDU.getVariableBindings());
-	        }
-	        else
-	        {
-	          System.out.println("Error: Request Failed");
-	          System.out.println("Error Status = " + errorStatus);
-	          System.out.println("Error Index = " + errorIndex);
-	          System.out.println("Error Status Text = " + errorStatusText);
-	        }
-	      }
-	      else
-	      {
-	        System.out.println("Error: Response PDU is null");
-	      }
-	    }
-	    else
-	    {
-	      System.out.println("Error: Agent Timeout... ");
-	    }
-	    snmp.close();
-	  }
+     e.printStackTrace();
+
+     }
 	
-	
+     
+     
+
+}
+
+
+public String snmpGet(String strAddress, String community, String strOID)
+
+{
+
+String str="";
+
+try
+
+{
+
+OctetString community1 = new OctetString(community); //comunidade
+
+strAddress= strAddress+"/" + 161; // ip destino
+
+Address targetaddress = new UdpAddress(strAddress); 
+
+TransportMapping transport = new DefaultUdpTransportMapping();
+
+transport.listen();
+
+CommunityTarget comtarget = new CommunityTarget();
+
+comtarget.setCommunity(community1);
+
+comtarget.setVersion(SnmpConstants.version1);
+
+comtarget.setAddress(targetaddress);
+
+comtarget.setRetries(2);
+
+comtarget.setTimeout(5000);
+
+PDU pdu = new PDU();
+
+ResponseEvent response;
+
+Snmp snmp;
+
+pdu.add(new VariableBinding(new OID(strOID)));
+
+pdu.setType(PDU.GET);
+
+snmp = new Snmp(transport);
+
+response = snmp.get(pdu, comtarget);
+
+if(response != null)
+
+{
+
+if(response.getResponse().getErrorStatusText().equalsIgnoreCase("Success"))
+
+{
+
+PDU pduresponse=response.getResponse();
+
+str=pduresponse.getVariableBindings().toString();
+
+if(str.contains("="))
+
+{
+
+int len = str.indexOf("=");
+
+str=str.substring(len+1, str.length());
+
+}
+
+}
+
+}
+
+else
+
+{
+
+System.out.println("Feeling like a TimeOut occured ");
+
+}
+
+snmp.close();
+
+} catch(Exception e) { e.printStackTrace(); }
+
+System.out.println("Response="+str);
+
+return str;
+
+}
+
 }
