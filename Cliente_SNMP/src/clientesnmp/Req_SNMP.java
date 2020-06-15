@@ -22,10 +22,10 @@ public class Req_SNMP {
 	{
 		
 	String str = "";
-	String Temp="";
+	String Temp = ""; 
 	String Umid = "";
 	String Fum = "";
-	String Fum2 = "";
+	String Fum2 = ""; 
 	int i =0;
 	try
 	{
@@ -87,7 +87,7 @@ public class Req_SNMP {
 	while(i<3){
 		String[] resultado = str.split(",");
 		String[] resultado2 = resultado[i].split("=");
-		System.out.println(resultado2[1]);
+		
 		//int len = str.indexOf(",");
 		//System.out.print(str);
 		if(i==0) {
@@ -96,13 +96,18 @@ public class Req_SNMP {
 			Umid=resultado2[1].replaceAll("\\D", "");
 		}else if (i==2) {
 			Fum=resultado2[1].replaceAll("\\D", "");
+				if (Fum.equals("0")) {
+					Fum="False";
+				}else {
+					Fum="True";
+				}
 		}
 		
 		i++;
 	}
 
 	}
-
+	System.out.println("");
 	}
 
 	}
@@ -118,8 +123,11 @@ public class Req_SNMP {
 	snmp.close();
 
 	} catch(Exception e) { e.printStackTrace(); }
-
-	return ("Temp= "+Temp+" Umid= "+ Umid + " Fum= " + Fum);
-	//return ("test");
+	
+	//return new Req_SNMP(Temp, Umid, Fum);
+	
+	return(Temp+","+ Umid+","+ Fum);
+	
 	}
+	
 }
